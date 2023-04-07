@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from ..models import User
 from ..schemas.user_schema import UserCreate, UserGet
 from .. import models
-from ..database import engine, get_db
+from ..database import get_db
 from ..utils import hash
 router = APIRouter(
     prefix = "/users",
