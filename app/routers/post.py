@@ -1,6 +1,7 @@
 from fastapi import status, HTTPException, Depends, APIRouter
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from ..models import Posts
 from ..schemas.post_schema import PostCreate, PostUpdate, PostGet
@@ -20,8 +21,14 @@ def get_posts(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
     limit: int = 5,
-    skip: int = 0):
-    return db.query(Posts).limit(limit).offset(skip).all()
+    skip: int = 0,
+    search: Optional[str] = ""):
+    
+    return db.query(
+        Posts).filter(
+        func.lower(Posts.title).contains(func.lower(search))).limit(
+        limit).offset(
+        skip).all()
         
 # @app.get("/posts/latest")
 # def get_latest():
