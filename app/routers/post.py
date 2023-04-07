@@ -1,12 +1,9 @@
-from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
-from fastapi.params import Body
+from fastapi import status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
 from typing import List
 
-from ..models import Posts, User
+from ..models import Posts
 from ..schemas.post_schema import PostCreate, PostUpdate, PostGet
-from ..schemas.user_schema import UserCreate, UserGet
-from .. import models
 from ..database import engine, get_db
 from ..oauth2 import get_current_user
 
@@ -21,11 +18,10 @@ router = APIRouter(
         response_model=List[PostGet])
 def get_posts(
     db: Session = Depends(get_db),
-    current_user: int = Depends(get_current_user)):
-    # posts = db.query(Posts).filter(Posts.owner_id == current_user.id).all()
-    posts = db.query(Posts).all()
-
-    return posts
+    current_user: dict = Depends(get_current_user),
+    limit: int = 5,
+    skip: int = 0):
+    return db.query(Posts).limit(limit).offset(skip).all()
         
 # @app.get("/posts/latest")
 # def get_latest():
@@ -37,24 +33,19 @@ def get_posts(
 def get_post(
     id: int,
     db: Session = Depends(get_db),
-    current_user: int = Depends(get_current_user)):
-    # post = find_posts(id)
-    # using first() just to return one post with that id as there is no point
-    # searching for more posts with that id as the id is primary key
-    post = db.query(Posts).filter(Posts.id==id).first()
-    
-    if not post:
+    current_user: dict = Depends(get_current_user)):
+    if post := db.query(Posts).filter(Posts.id == id).first():
+        # if post.owner_id != current_user.id:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_403_FORBIDDEN,
+        #         detail=f"{current_user.email} is not authorized to see this post"
+        #     )
+
+        return post
+    else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with ID: {id} not found!")
-    
-    # if post.owner_id != current_user.id:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail=f"{current_user.email} is not authorized to see this post"
-    #     )
-    
-    return post
 
 # use plurals for links/path names
 @router.post(
@@ -64,8 +55,7 @@ def get_post(
 def create_posts(
     post: PostCreate,
     db: Session = Depends(get_db),
-    current_user: int = Depends(get_current_user)):
-    print(current_user.id)
+    current_user: dict = Depends(get_current_user)) -> dict:
     
     single_post = Posts(owner_id = current_user.id, **post.__dict__)
     db.add(single_post)
@@ -81,7 +71,7 @@ def create_posts(
 def update_posts(
     id: int, post: PostUpdate, 
     db: Session = Depends(get_db), 
-    current_user: int = Depends(get_current_user)) -> None:
+    current_user: dict = Depends(get_current_user)) -> None:
     
     # post_idx = find_post_idx(id)
     post_query = db.query(Posts).filter(Posts.id == id)
@@ -110,7 +100,7 @@ def update_posts(
 def delete_posts(
     id: int,
     db: Session = Depends(get_db),
-    current_user: int = Depends(get_current_user)) -> dict:
+    current_user: dict = Depends(get_current_user)) -> dict:
     
     # post_idx = find_post_idx(id)
     post = db.query(Posts).filter(Posts.id == id)
@@ -127,7 +117,6 @@ def delete_posts(
             detail=f"{current_user.email} is not authorized to delete this post"
         )
     
-    # my_posts.pop(post_idx)
     post.delete(synchronize_session=False)
     db.commit()
     return {"message": f"post {id} deleted!"}
