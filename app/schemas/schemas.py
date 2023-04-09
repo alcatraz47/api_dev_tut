@@ -3,7 +3,6 @@ from pydantic import BaseModel, EmailStr, conint
 from datetime import datetime
 
 class PostBase(BaseModel):
-    id: int
     title: str
     content: str
     published: bool = True
@@ -15,6 +14,7 @@ class PostUpdate(PostBase):
     pass
 
 class PostGet(PostBase):
+    id: int
     created_at: datetime
     owner_id: int
 
