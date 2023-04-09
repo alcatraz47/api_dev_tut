@@ -1,10 +1,11 @@
+from collections import defaultdict
 from fastapi import status, HTTPException, Depends, APIRouter
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from ..models import Posts
-from ..schemas.post_schema import PostCreate, PostUpdate, PostGet
+from ..models import Posts, Vote
+from ..schemas.schemas import PostCreate, PostUpdate, PostGet, PostsWithVote
 from ..database import engine, get_db
 from ..oauth2 import get_current_user
 
@@ -14,9 +15,8 @@ router = APIRouter(
 )
 
 # the fastapi will try to find the first path so the path names need to be sequential
-@router.get(
-        "/",
-        response_model=List[PostGet])
+#,response_model=List[PostGet]
+@router.get("/",response_model=List[PostsWithVote])
 def get_posts(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
@@ -24,11 +24,23 @@ def get_posts(
     skip: int = 0,
     search: Optional[str] = ""):
     
+    # query without join and aggregating function.
+    # posts = db.query(
+    #     Posts).filter(
+    #     func.lower(Posts.title).contains(func.lower(search))).limit(
+    #     limit).offset(
+    #     skip).all()
+
+    # row_as_dict = [row._mapping for row in results]
+    # in case of failure of result parsing after operating the query below,
+    # try the list comprehension above after operating the query below.
+    # then use Pydantic schema modeling according to the results.
+
     return db.query(
-        Posts).filter(
-        func.lower(Posts.title).contains(func.lower(search))).limit(
-        limit).offset(
-        skip).all()
+        Posts, func.count(Vote.post_id).label("votes")).join(
+        Vote, Vote.post_id == Posts.id, isouter=True).group_by(
+        Posts.id).filter(func.lower(Posts.title).contains(
+        func.lower(search))).limit(limit=limit).offset(skip).all()
         
 # @app.get("/posts/latest")
 # def get_latest():
