@@ -1,8 +1,10 @@
 # pylint: disable=import-error
 from sqlalchemy import Column, Boolean, ForeignKey, Integer, String
-# from sqlalchemy_utils import EmailType
+from sqlalchemy_utils import EmailType
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
+from sqlalchemy_utils import PhoneNumberType
+
 from .database import Base
 
 class Posts(Base):
@@ -34,8 +36,9 @@ class User(Base):
         server_default=text('now()')
     )
 
-    email = Column(String, nullable=False)
+    email = Column(EmailType, nullable=False)
     password = Column(String, nullable=False)
+    phone_number = Column(PhoneNumberType)
 
 class Vote(Base):
     __tablename__ = "votes"
@@ -51,7 +54,3 @@ class Vote(Base):
         ForeignKey("posts.id", ondelete="CASCADE"),
         primary_key=True
     )
-
-class Dummy(Base):
-    __tablename__ = "dummytable"
-    id = Column(Integer, primary_key=True)

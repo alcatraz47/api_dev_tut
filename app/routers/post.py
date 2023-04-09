@@ -48,12 +48,17 @@ def get_posts(
 
 @router.get(
         "/{id}",
-        response_model=PostGet)
+        response_model=PostsWithVote)
 def get_post(
     id: int,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)):
-    if post := db.query(Posts).filter(Posts.id == id).first():
+    if post := db.query(
+        Posts, func.count(Vote.post_id).label("votes")).join(
+        Vote, Vote.post_id == Posts.id, isouter=True).group_by(
+        Posts.id).filter(Posts.id == id).first():
+
+        # db.query(Posts).filter(Posts.id == id).first():
         # if post.owner_id != current_user.id:
         #     raise HTTPException(
         #         status_code=status.HTTP_403_FORBIDDEN,

@@ -4,7 +4,7 @@ from .routers import post, user, auth, logout, vote
 
 app = FastAPI()
 
-#path operation [according to fastapi] or route
+# path operation [according to fastapi] or route
 # http methods will be maintained via decorator's function(get, post, update, delete). path is the specific domain name fo the api.
 # the line below is the decoretor. this will convert the function into an actual path operation.
 @app.get("/")
