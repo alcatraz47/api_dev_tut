@@ -15,6 +15,8 @@ uvicorn app.main:app --reload
 ## Running the project using Docker
 To run the project using Docker, make sure you have Docker installed on your machine. Then, follow these steps:
 
+The docker file is not ready yet. Will be posted very soon!
+
 ```bash
 docker build -t my-fastapi-app .
 ```
